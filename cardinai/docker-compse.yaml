@@ -1,0 +1,73 @@
+services:
+  nginx:
+    container_name: nginx
+    restart: always
+    depends_on:
+      - django
+    build:
+      context: ./nginx
+      args:
+        - CERT_KEY=${CERT_KEY}
+        - CERT_CRT=${CERT_CRT}
+    ports:
+      - "443:443"
+    expose:
+      - "443"
+    networks:
+      - intra_net
+
+  backend:
+    container_name: backend
+    restart: always
+    build:
+      context: ./node
+    volumes:
+      - frontend:/app
+      - /app/node_modules
+    ports:
+      - 3100:3100
+      - 24678:24678
+    expose:
+      - "3100"
+    networks:
+      - intra_net
+
+  log-viewer:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "10000:8080"
+    expose:
+      - 8080
+    networks:
+      - intra_net
+    init: true
+
+volumes:
+  frontend:
+    name: frontend
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/srcs/node/frontend # 수정해야함.
+      o: bind
+  backend:
+    name: backend
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/srcs/django/backend # 수정해야함.
+      o: bind
+  database:
+    name: database
+    driver: local
+    driver_opts:
+      type: none
+      device: ${DATA_PATH}/pgsql
+      o: bind
+
+networks:
+  intra_net:
+    driver: bridge
