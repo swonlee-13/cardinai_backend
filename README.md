@@ -1,0 +1,2 @@
+# CardinAI
+# cardinai_backend
